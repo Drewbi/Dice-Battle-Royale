@@ -23,6 +23,29 @@
 
 #define BUFFER_SIZE 1024
 
+struct player {
+    int client_id;
+    int player_lives;
+};
+
+struct game_session {
+    struct player session_players[4];
+    int rounds;
+};
+
+struct game_session setup_game(struct player players[4]) {
+    for (int i = 0; i < 4; i++) {
+        players[i].player_lives = rand() % 10 + 1;
+    }
+
+    int game_rounds = rand() % 5 + 1;
+
+    struct game_session current_game = {players, game_rounds};
+    
+    return current_game;
+
+}
+
 int main (int argc, char *argv[]) {
     if (argc < 2) {
         fprintf(stderr,"Usage: %s [port]\n",argv[0]);
@@ -71,8 +94,8 @@ int main (int argc, char *argv[]) {
         if (client_fd < 0) {
             fprintf(stderr,"Could not establish new connection\n");
             exit(EXIT_FAILURE);
+        }
 
-        } 
         
         /**
         The following while loop contains some basic code that sends messages back and forth
@@ -100,7 +123,7 @@ int main (int argc, char *argv[]) {
         setup_game/teardown_game() {} : 
             * this will set up the initial state of the game (number of rounds, players
             etc.)/ print out final game results and cancel socket connections. 
-            
+        
         Accepting multiple connections (we recommend not starting this until after implementing some
         of the basic message parsing/game playing): 
             * Whilst in a while loop
@@ -129,7 +152,7 @@ int main (int argc, char *argv[]) {
              sleep(5); //Wait 5 seconds
 
             buf[0] = '\0';
-            sprintf(buf, "Let the games begin\n");
+            sprintf(buf, "Let repeatedthe games begin\n");
 
             err = send(client_fd, buf, strlen(buf), 0); // Send another thing
             if (err < 0){

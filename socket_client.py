@@ -32,9 +32,13 @@ try:
     
         exit = False
         # Send data
-        message = 'This is the message.  It will be repeated.'.encode()
+        message = 'Client requesting to connect to EF RNG Battle Royale.'.encode()
         print ('sending "%s"' % message)
         sock.sendall(message)
+
+        # Ask player whether they would like to start the game
+        init_game = input('You are now connected! Would you like to start the game? (Y/N)').encode()
+        sock.sendall(init_game)
 
         # Look for the response
         amount_received = 0
