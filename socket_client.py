@@ -31,26 +31,36 @@ try:
     while True:
     
         exit = False
-        # Send data
-        message = 'Client requesting to connect to EF RNG Battle Royale.'.encode()
-        print ('sending "%s"' % message)
-        sock.sendall(message)
-
-        # Ask player whether they would like to start the game
-        init_game = input('You are now connected! Would you like to start the game? (Y/N)').encode()
-        sock.sendall(init_game)
+        
+        #send the server init packet
+        conn_req = 'Client requesting to connect'.encode()
+        sock.sendall(conn_req)
 
         # Look for the response
         amount_received = 0
         amount_expected = len(message)
         
         while amount_received < amount_expected:
+            client_id = 0
             data = sock.recv(1024)
             amount_received += len(data)
             mess = data.decode()
-            if "games" in mess:
-                print("The games have begun")
-                sock.sendall('231,MOV,CON,1'.encode()) # Client has ID 231
+
+            if "REJECT" in mess:
+                print("Connection rejected by server");
+                break;
+            if "My politely respondance" in mess:
+                print("Receieved polite reponse from server")
+                sock.sendall('INIT'.encode())
+            if "WELCOME" in mess:
+                client_id = int(mess.replace('WELCOME,', ''))
+                print(client_id)
+            if "The games will begin shortly" in mess:
+                print("The games will begin shortly")
+            if "START" in mess:
+                print("The game has now started")
+                choice = input()
+                sock.sendall()
             elif "You lose" in mess:
                 print("We lost, closing connection")
                 exit = True

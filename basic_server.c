@@ -20,31 +20,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include "game.c"
 
 #define BUFFER_SIZE 1024
-
-struct player {
-    int client_id;
-    int player_lives;
-};
-
-struct game_session {
-    struct player session_players[4];
-    int rounds;
-};
-
-struct game_session setup_game(struct player players[4]) {
-    for (int i = 0; i < 4; i++) {
-        players[i].player_lives = rand() % 10 + 1;
-    }
-
-    int game_rounds = rand() % 5 + 1;
-
-    struct game_session current_game = {players, game_rounds};
-    
-    return current_game;
-
-}
 
 int main (int argc, char *argv[]) {
     if (argc < 2) {
@@ -144,17 +122,57 @@ int main (int argc, char *argv[]) {
 
             printf("%s\n", buf);
 
+            // printf("%s\n", buf);
+
             buf[0] = '\0';
             sprintf(buf, "My politely respondance");
-
             err = send(client_fd, buf, strlen(buf), 0); // Try to send something back
-            // printf("Client's message is: %s",buf);
-             sleep(5); //Wait 5 seconds
-
             buf[0] = '\0';
+            sleep(5); //Wait 5 seconds
+
+            int init_game = recv(client_fd, buf, BUFFER_SIZE, 0);
+            if (init_game < 0) {
+                fprintf(stderr, "Client read failed :(\n");
+                exit(EXIT_FAILURE);
+            }
+            else {
+                printf("Client sends back %s\n", buf);
+                if (strstr(buf, "INIT")) {
+
+                    struct game_session current_game = setup_game();
+
+                    struct player first_client = current_game.session_players[0];
+
+                    sprintf(buf, "WELCOME,%d", first_client.client_id);
+
+                    send(client_fd, buf, strlen(buf), 0);
+                    sleep(5);
+                    buf[0] = '\0';
+                    sprintf(buf, "The games will begin shortly\n");
+                    send(client_fd, buf, strlen(buf), 0);
+                    sleep(10);
+
+                    buf[0] = '\0';
+                    sprintf(buf, "START %ld,%d", sizeof(current_game.session_players), first_client.player_lives);
+                    printf("%s", buf);
+                    send(client_fd, buf, strlen(buf), 0);
+                    sleep(5);
+
+                    while(true) {
+                        char *move = calloc(BUFFER_SIZE, sizeof(char));
+                        int* roll = diceroll();
+                        recv(client_fd, move, BUFFER_SIZE, 0);
+                        printf("Player %d's move: %s", first_client.client_id, move);
+                        sleep(15);
+                        break;
+                    }
+                }
+            }
+
             sprintf(buf, "Let repeatedthe games begin\n");
 
             err = send(client_fd, buf, strlen(buf), 0); // Send another thing
+
             if (err < 0){
                 fprintf(stderr,"Client write failed\n");
                 exit(EXIT_FAILURE);
@@ -165,6 +183,7 @@ int main (int argc, char *argv[]) {
             if (read < 0){
                 fprintf(stderr,"Client read failed\n");
                 exit(EXIT_FAILURE);
+            
             }
 
             if (strstr(buf, "move") == NULL) {  // Check if the message contained 'move'
