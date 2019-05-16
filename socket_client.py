@@ -41,28 +41,31 @@ try:
         amount_expected = len(message)
         
         while amount_received < amount_expected:
-            client_id = 0
             data = sock.recv(1024)
             amount_received += len(data)
             mess = data.decode()
-
-            if "REJECT" in mess:
-                print("Connection rejected by server");
-                break;
+            client_id = 0
+            if "Wanna play fortnite?" in mess:
+                sock.sendall('No. Not in a million years'.encode())
+            if "EF RNG" in mess:
+                sock.sendall("INIT".encode())
             if "My politely respondance" in mess:
                 print("Receieved polite reponse from server")
                 sock.sendall('INIT'.encode())
             if "WELCOME" in mess:
-                client_id = int(mess.replace('WELCOME,', ''))
-                print(client_id)
-            if "The games will begin shortly" in mess:
-                print("The games will begin shortly")
+                sock.sendall("HELLO! READY FOR RNG".encode())
             if "START" in mess:
-                print("The game has now started")
-                choice = input()
-                sock.sendall()
-            elif "You lose" in mess:
-                print("We lost, closing connection")
+                print(mess) 
+                sock.sendall("GLHF NOOBS".encode())
+            if "OUT OF" in mess:
+                print(mess)
+                sock.sendall("5,MOV,EVEN".encode())
+            elif "REJECT" in mess:
+                print("Got rejected, in the same way your first crush rejected you.")
+                exit = True
+                break
+            elif "Goodbye" in mess:
+                print("Server said bye-bye")
                 exit = True
                 break
             else:
