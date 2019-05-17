@@ -20,31 +20,12 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <sys/time.h>
+#include <errno.h>
+#include "game.c"
 
 #define BUFFER_SIZE 1024
-
-struct player {
-    int client_id;
-    int player_lives;
-};
-
-struct game_session {
-    struct player session_players[4];
-    int rounds;
-};
-
-struct game_session setup_game(struct player players[4]) {
-    for (int i = 0; i < 4; i++) {
-        players[i].player_lives = rand() % 10 + 1;
-    }
-
-    int game_rounds = rand() % 5 + 1;
-
-    struct game_session current_game = {players, game_rounds};
-    
-    return current_game;
-
-}
+#define MAX_PLAYERS 4
 
 int main (int argc, char *argv[]) {
     if (argc < 2) {
@@ -55,8 +36,10 @@ int main (int argc, char *argv[]) {
     int port = atoi(argv[1]);
 
     int server_fd, client_fd, err, opt_val;
-    struct sockaddr_in server, client;
+    struct sockaddr_in server, client; 
+    struct game_session current_game;
     char *buf;
+    fd_set read_fds;
 
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -86,17 +69,106 @@ int main (int argc, char *argv[]) {
 
     printf("Server is listening on %d\n", port);
 
-    while (true) {
-        socklen_t client_len = sizeof(client);
-        // Will block until a connection is made
-        client_fd = accept(server_fd, (struct sockaddr *) &client, &client_len);
+    socklen_t client_len = sizeof(client);
 
+    while (true) {
+        int pid;
+        char* buf = calloc(BUFFER_SIZE, sizeof(char));
+        client_fd = accept(server_fd, (struct sockaddr *) &client, &client_len);
         if (client_fd < 0) {
-            fprintf(stderr,"Could not establish new connection\n");
+            fprintf(stderr,"Could not accept new connection.\n");
             exit(EXIT_FAILURE);
         }
+        pid = fork();
+        if (pid < 0) {
+            fprintf(stderr,"Can't create child process\n");
+        }
+        if (pid == 0) {
+            close(server_fd);
 
-        
+            current_game = init_game();
+
+            while(true) {
+                int client_read = recv(client_fd, buf, BUFFER_SIZE, 0);
+                if (client_read < 0) {
+                    printf("Can't read from client");
+                }
+                // printf("Receiving messeges from %d", client_fd);
+
+                buf[0] = '\0';
+                sprintf(buf, "Wanna play fortnite?");
+                err = send(client_fd, buf, strlen(buf), 0); 
+                sleep(5);
+
+                buf[0] = '\0';
+                recv(client_fd, buf, BUFFER_SIZE, 0);
+                if((strstr(buf, "No"))) {
+                    buf[0] = '\0';
+                    sprintf(buf, "Too bad! Because this is EF RNG Battle Royale!");
+                    send(client_fd, buf, strlen(buf), 0); 
+                    sleep(5);
+
+                    buf[0] = '\0';
+                    recv(client_fd, buf, BUFFER_SIZE, 0);
+                    if((strstr(buf, "INIT"))) {
+                        if(current_game.player_number <= MAX_PLAYERS) {
+                            add_player(current_game, client_fd);
+                            current_game.player_number++;
+
+                            buf[0] = '\0';
+                            sprintf(buf, "WELCOME,%d", client_fd);
+                            send(client_fd, buf, strlen(buf), 0);
+                            sleep(10); 
+                        }
+
+
+                        else {
+                            buf[0] = '\0';
+                            sprintf(buf, "REJECT");
+                            send(client_fd, buf, strlen(buf), 0);
+                            close(client_fd);
+                        }
+
+                        if (current_game.player_number >= 1) {
+                            buf[0] = '\0';
+                            sprintf(buf, "START,%d,%d", current_game.player_number, 3);
+                            send(client_fd, buf, strlen(buf), 0);
+                            sleep(5);
+
+                            for (int r = 1; r <= current_game.rounds; r++) {
+                                printf("ROUND %d OUT OF %d\n", r, current_game.rounds);
+                                buf[0] = '\0';
+                                sprintf(buf, "ROUND %d OUT OF %d", r, current_game.rounds);
+                                send(client_fd, buf, strlen(buf), 0);
+                                // printf("I GOT HERE\n");
+
+
+                                buf[0] = '\0';
+                                err = recv(client_fd, buf, BUFFER_SIZE, 0);
+                                if(err < 0) {
+                                    printf("Error in receiving player move");
+                                }
+                                // printf("NOW I'M HERE\n");
+                                if (strstr(buf, "MOV")) {
+                                    printf("PLAYER %d's move: %s\n", client_fd, buf);
+                                    char** player_move = parse_move(buf);
+                                }
+                                
+                            }
+                        }
+                    }
+
+                    else {
+                        buf[0] = '\0';
+                        sprintf(buf, "Expected INIT message. Got gibberish. Goodbye.");
+                        send(client_fd, buf, strlen(buf), 0);
+                        close(client_fd);
+                    }
+
+                }
+                
+            }
+        }
         /**
         The following while loop contains some basic code that sends messages back and forth
         between a client (e.g. the socket_client.py client). 
@@ -133,7 +205,9 @@ int main (int argc, char *argv[]) {
                 (or read the messages) 
         **/
         
-        while (true) {  
+        /*
+        while (true) { 
+            int player_count = 0; 
             buf = calloc(BUFFER_SIZE, sizeof(char)); // Clear our buffer so we don't accidentally send/print garbage
             int read = recv(client_fd, buf, BUFFER_SIZE, 0);    // Try to read from the incoming client
 
@@ -144,46 +218,17 @@ int main (int argc, char *argv[]) {
 
             printf("%s\n", buf);
 
+            // printf("%s\n", buf);
+
             buf[0] = '\0';
             sprintf(buf, "My politely respondance");
-
             err = send(client_fd, buf, strlen(buf), 0); // Try to send something back
-            // printf("Client's message is: %s",buf);
-             sleep(5); //Wait 5 seconds
-
             buf[0] = '\0';
-            sprintf(buf, "Let repeatedthe games begin\n");
+            sleep(5); //Wait 5 seconds
 
-            err = send(client_fd, buf, strlen(buf), 0); // Send another thing
-            if (err < 0){
-                fprintf(stderr,"Client write failed\n");
-                exit(EXIT_FAILURE);
-            }
-
-            read = recv(client_fd, buf, BUFFER_SIZE, 0); // See if we have a response
-
-            if (read < 0){
-                fprintf(stderr,"Client read failed\n");
-                exit(EXIT_FAILURE);
-            }
-
-            if (strstr(buf, "move") == NULL) {  // Check if the message contained 'move'
-                fprintf(stderr, "Unexpected message, terminating\n");
-                exit(EXIT_FAILURE);
-            }
-
-            buf[0] = '\0';
-            sprintf(buf, "You lose\n");
-
-            err = send(client_fd, buf, strlen(buf), 0); // Send our final response
-
-            if (err < 0){
-                    fprintf(stderr,"Client write failed\n");
-                    exit(EXIT_FAILURE);
-            }
-
+           
             free(buf);
-        }
+        } */
 
     }
 }

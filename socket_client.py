@@ -31,14 +31,10 @@ try:
     while True:
     
         exit = False
-        # Send data
-        message = 'Client requesting to connect to EF RNG Battle Royale.'.encode()
-        print ('sending "%s"' % message)
-        sock.sendall(message)
-
-        # Ask player whether they would like to start the game
-        init_game = input('You are now connected! Would you like to start the game? (Y/N)').encode()
-        sock.sendall(init_game)
+        
+        #send the server init packet
+        conn_req = 'Client requesting to connect'.encode()
+        sock.sendall(conn_req)
 
         # Look for the response
         amount_received = 0
@@ -48,11 +44,28 @@ try:
             data = sock.recv(1024)
             amount_received += len(data)
             mess = data.decode()
-            if "games" in mess:
-                print("The games have begun")
-                sock.sendall('231,MOV,CON,1'.encode()) # Client has ID 231
-            elif "You lose" in mess:
-                print("We lost, closing connection")
+            client_id = 0
+            if "Wanna play fortnite?" in mess:
+                sock.sendall('No. Not in a million years'.encode())
+            if "EF RNG" in mess:
+                sock.sendall("INIT".encode())
+            if "My politely respondance" in mess:
+                print("Receieved polite reponse from server")
+                sock.sendall('INIT'.encode())
+            if "WELCOME" in mess:
+                sock.sendall("HELLO! READY FOR RNG".encode())
+            if "START" in mess:
+                print(mess) 
+                sock.sendall("GLHF NOOBS".encode())
+            if "OUT OF" in mess:
+                print(mess)
+                sock.sendall("5,MOV,EVEN".encode())
+            elif "REJECT" in mess:
+                print("Got rejected, in the same way your first crush rejected you.")
+                exit = True
+                break
+            elif "Goodbye" in mess:
+                print("Server said bye-bye")
                 exit = True
                 break
             else:
