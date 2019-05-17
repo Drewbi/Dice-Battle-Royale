@@ -143,9 +143,7 @@ int main (int argc, char *argv[]) {
                                 
                             }
                         }
-                    }
-
-                    else {
+                    } else {
                         buf[0] = '\0';
                         sprintf(buf, "Expected INIT message. Got gibberish. Goodbye.");
                         send(client_fd, buf, strlen(buf), 0);
