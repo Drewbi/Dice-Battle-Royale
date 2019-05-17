@@ -1,22 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <unistd.h>
-
-struct player {
-    int client_id;
-    int player_lives;
-};
-
-struct game_session {
-    struct player *session_players;
-    int player_number;
-    int rounds;
-};
+#include "header.h"
 
 struct game_session init_game() {
     struct player *players = calloc(4, sizeof(struct player));
@@ -82,7 +64,7 @@ char* eval_move(char** move, int* dice, int player_id) {
         win = true;
     } 
 
-    else if (strstr(move[2], "CON") && dice[0] == atoi(move[3]) || dice[1] == atoi(move[3])) {
+    else if (strstr(move[2], "CON") && (dice[0] == atoi(move[3]) || dice[1] == atoi(move[3]))) {
        win = true;
     }
 

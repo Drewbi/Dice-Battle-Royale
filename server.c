@@ -12,20 +12,7 @@
  *   - Can we wrap the action of sending ALL of out data and receiving ALL of the data?
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#include <sys/time.h>
-#include <errno.h>
-#include "game.c"
-
-#define BUFFER_SIZE 1024
-#define MAX_PLAYERS 4
+#include "header.h"
 
 int main (int argc, char *argv[]) {
     if (argc < 2) {
