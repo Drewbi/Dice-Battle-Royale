@@ -88,7 +88,7 @@ int main (int argc, char *argv[]) {
                 if (client_read < 0) {
                     printf("Can't read from client");
                 }
-                // printf("Receiving messeges from %d", client_fd);
+                printf("Receiving messeges from %d", client_fd);
 
                 buf[0] = '\0';
                 sprintf(buf, "Wanna play fortnite?");
@@ -109,7 +109,7 @@ int main (int argc, char *argv[]) {
                         if(current_game.player_number <= MAX_PLAYERS) {
                             add_player(current_game, client_fd);
                             current_game.player_number++;
-
+                            
                             buf[0] = '\0';
                             sprintf(buf, "WELCOME,%d", client_fd);
                             send(client_fd, buf, strlen(buf), 0);
