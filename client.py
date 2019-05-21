@@ -57,10 +57,11 @@ try:
                 sock.sendall("HELLO! READY FOR RNG".encode())
             if "START" in mess:
                 print(mess) 
-                sock.sendall("GLHF NOOBS".encode())
+                sock.sendall("5,MOV,EVEN".encode())
             if "OUT OF" in mess:
                 print(mess)
-                sock.sendall("5,MOV,EVEN".encode())
+            elif "LIVES LEFT" in mess:
+                print(mess)   
             elif "REJECT" in mess:
                 print("Got rejected, in the same way your first crush rejected you.")
                 exit = True

@@ -88,11 +88,11 @@ int main (int argc, char *argv[]) {
                 fprintf(stderr, "Could not read from parent\n");
             }
 
-            printf("As read from parent: %d\n", current_game.player_number);
+            // printf("As read from parent: %d\n", current_game.player_number);
             close(fd[0]);
 
             while(true) {
-                printf("Player number from server: %d\n", current_game.player_number);
+                // printf("Player number from server: %d\n", current_game.player_number);
                 game_session(current_game, client_fd);
             } 
         }
@@ -103,7 +103,7 @@ int main (int argc, char *argv[]) {
 
             write(fd[1], &current_game.player_number, sizeof(current_game.player_number));
 
-            printf("Parent sending value: %d\n", current_game.player_number);
+            // printf("Parent sending value: %d\n", current_game.player_number);
             
             close(fd[1]);
 
