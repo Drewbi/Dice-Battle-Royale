@@ -74,104 +74,16 @@ int main (int argc, char *argv[]) {
         }
 
         else if (pid == 0) {
-
-            current_game.player_number++;
-            printf("Setting player count up one");
             close(server_fd);
             
             while(true) {
                 printf("Player number from server: %d\n", current_game.player_number);
                 game_session(current_game, client_fd);
-
-                /*
-                int client_read = recv(client_fd, buf, BUFFER_SIZE, 0);
-                if (client_read < 0) {
-                    printf("Can't read from client");
-                }
-                printf("Receiving messeges from %d", client_fd);
-
-                buf[0] = '\0';
-                sprintf(buf, "Wanna play fortnite?");
-                err = send(client_fd, buf, strlen(buf), 0); 
-                sleep(5);
-
-                buf[0] = '\0';
-                recv(client_fd, buf, BUFFER_SIZE, 0);
-                if((strstr(buf, "No"))) {
-                    buf[0] = '\0';
-                    sprintf(buf, "Too bad! Because this is EF RNG Battle Royale!");
-                    send(client_fd, buf, strlen(buf), 0); 
-                    sleep(5);
-
-                    buf[0] = '\0';
-                    recv(client_fd, buf, BUFFER_SIZE, 0);
-                    if(strstr(buf, "INIT")) {
-                        if(current_game.player_number <= MAX_PLAYERS) {
-                            add_player(current_game, client_fd);
-                            current_game.player_number++;
-                            
-                            buf[0] = '\0';
-                            sprintf(buf, "WELCOME,%d", client_fd);
-                            send(client_fd, buf, strlen(buf), 0);
-                            sleep(10); 
-                        } else {
-                            buf[0] = '\0';
-                            sprintf(buf, "REJECT");
-                            send(client_fd, buf, strlen(buf), 0);
-                            close(client_fd);
-                        }
-                        
-                        if (current_game.player_number >= 2) {
-                            buf[0] = '\0';
-                            sprintf(buf, "START,%d,%d", current_game.player_number, 3);
-                            send(client_fd, buf, strlen(buf), 0);
-                            sleep(10);
-
-                            while (true) {
-                                int round = 1;
-                                printf("ROUND %d OUT OF %d\n", round, current_game.rounds);
-                                char *move = calloc(BUFFER_SIZE, sizeof(char));
-                                int* dice_result = diceroll();
-                                sprintf(buf, "ROUND %d OUT OF %d\n", round, current_game.rounds);
-                                send(client_fd, buf, strlen(buf), 0);
-                                err = send(client_fd, buf, strlen(buf), 0);
-
-                                if (err < 0) {
-                                    printf("Error in sending round info\n");
-                                }
-
-                                buf[0] = '\0';
-                                err = recv(client_fd, move, BUFFER_SIZE, 0);
-                                if (err < 0) {
-                                    printf("Error in receiving player move");
-                                }
-                                if (strstr(buf, "MOV")) {
-                                    printf("PLAYER %d's move: %s\n", client_fd, move);
-                                    char* result = eval_move(buf, dice_result, client_fd);
-                                    send(client_fd, result, strlen(result), 0);
-                                }
-                                else {
-                                    buf[0] = '\0';
-                                    sprintf(buf, "%d,FAIL", client_fd);
-                                    send(client_fd, buf, strlen(buf), 0);
-                                    // this is a great line learn
-                                }
-                            }
-                        }
-                    } 
-                    else {
-                        buf[0] = '\0';
-                        sprintf(buf, "Expected INIT message. Got gibberish. Goodbye.");
-                        send(client_fd, buf, strlen(buf), 0);
-                        close(client_fd);
-                    }
-
-                } */
-                
             } 
         }
         else {
             printf("Connection being made by player %d\n", client_fd);
+            current_game.player_number++;
         }
     }
 }
