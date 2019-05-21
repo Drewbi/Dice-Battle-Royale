@@ -20,7 +20,8 @@ int main (int argc, char *argv[]) {
         fprintf(stderr,"Usage: %s [port]\n",argv[0]);
         exit(EXIT_FAILURE);
     }
-    struct game_session current_game;
+    
+    struct game_session current_game = init_game();
 
     // Set up socket and connection
     int port = atoi(argv[1]);
@@ -55,6 +56,8 @@ int main (int argc, char *argv[]) {
 
     struct sockaddr_in client; 
     socklen_t client_len = sizeof(client);
+
+
 
     // Connect clients
     while (true) {

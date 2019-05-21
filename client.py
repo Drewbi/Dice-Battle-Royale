@@ -45,13 +45,7 @@ try:
             amount_received += len(data)
             mess = data.decode()
             client_id = 0
-            if "Wanna play fortnite?" in mess:
-                sock.sendall('No. Not in a million years'.encode())
-            if "EF Battle Royale" in mess:
-                sock.sendall("INIT".encode())
-            if "My politely respondance" in mess:
-                print("Receieved polite reponse from server")
-                sock.sendall('INIT'.encode())
+            sock.sendall("INIT".encode())
             if "WELCOME" in mess:
                 print(mess)
                 sock.sendall("HELLO! READY FOR RNG".encode())
