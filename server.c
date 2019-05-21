@@ -71,15 +71,17 @@ int main (int argc, char *argv[]) {
         }
 
         pid = fork();
-       
         if (pid < 0) {
             fprintf(stderr,"Can't create child process\n");
         }
 
         else if (pid == 0) {
+
+            current_game.player_number++;
+            printf("Setting player count up one");
             close(server_fd);
+            
             while(true) {
-                current_game.player_number++;
                 printf("Player number from server: %d\n", current_game.player_number);
                 game_session(current_game, client_fd);
 
