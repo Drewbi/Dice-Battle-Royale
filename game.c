@@ -114,8 +114,8 @@ bool game_session(struct game_session game, int player_fd) {
     send_message(buf, player_fd, game);
     printf("I have recieved your message %d\n", player_fd);
     add_player(game, player_fd);
-    // game.player_number++;
-    printf("Player number: %d\n", game.player_number);
+    game.player_number++;
+    // printf("Player number: %d\n", game.player_number);
     sleep(20);
 
     if (game.player_number >= 2) {
