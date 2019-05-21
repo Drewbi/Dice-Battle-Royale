@@ -117,16 +117,11 @@ bool game_session(struct game_session game, int player_fd) {
     add_player(game, player_fd);
     // game.player_number++;
     printf("Player number: %d\n", game.player_number);
-    sleep(12);
+    sleep(20);
 
     if (game.player_number >= 2) {
         send_message("START", player_fd, game);
 
-    }
-    else {
-        printf("Not enough players. Closing game...\n");
-        send_message("CANCEL", player_fd, game);
-        close(player_fd);
     }
     
 

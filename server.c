@@ -59,11 +59,13 @@ int main (int argc, char *argv[]) {
 
     socklen_t client_len = sizeof(client);
 
+    current_game = init_game();
+
     while (true) {
         int pid;
         char* buf = calloc(BUFFER_SIZE, sizeof(char));
-        client_fd = accept(server_fd, (struct sockaddr *) &client, &client_len);  
-          
+        client_fd = accept(server_fd, (struct sockaddr *) &client, &client_len);   
+        
 
         if (client_fd < 0) {
             fprintf(stderr,"Could not accept new connection.\n");
@@ -79,9 +81,9 @@ int main (int argc, char *argv[]) {
         else if (pid == 0) {
             close(server_fd);
             while(true) {
-                current_game.player_number++;
                 printf("Player number from server: %d\n", current_game.player_number);
                 game_session(current_game, client_fd);
+                
 
                 /*
                 int client_read = recv(client_fd, buf, BUFFER_SIZE, 0);
@@ -177,6 +179,8 @@ int main (int argc, char *argv[]) {
         }
         else {
             printf("Connection being made by player %d\n", client_fd);
+            current_game.player_number++;
+            printf("%d\n", current_game.player_number);
         }
     }
 }
