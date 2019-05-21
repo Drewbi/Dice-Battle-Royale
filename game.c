@@ -23,6 +23,7 @@ void add_player(struct game_session game, int player_id) {
     
 }
 
+
 int* diceroll() {
     int *result;
 
@@ -34,39 +35,25 @@ int* diceroll() {
     return result;
 }
 
-char** parse_move(char* move) {
-    char **parsed = (char **) malloc(sizeof(char*) * 4);
-    char *delim = ",";
-
-    move = strtok(move, delim);
-    for (int i = 0; i < 4; i++) {
-        while(move != NULL) {
-            parsed[i] = move;
-        }
-    }
-
-    return parsed;
-}
-
-char* eval_move(char** move, int* dice, int player_id) {
+char* eval_move(char* move, int* dice, int player_id) {
     bool win = false;
     char* result = calloc(25, sizeof(char));
 
-    if (strstr(move[2], "EVEN") && (dice[0] + dice[1]) % 2 == 0) {
+    if (strstr(move, "EVEN") && (dice[0] + dice[1]) % 2 == 0) {
         win = true;
     }
 
-    else if (strstr(move[2], "ODD"), (dice[0] + dice[1]) % 2 != 0) {
+    else if (strstr(move, "ODD"), (dice[0] + dice[1]) % 2 != 0) {
         win = true;
     }
 
-    else if (strstr(move[2], "DOUB"), dice[0] == dice[1]) {
+    else if (strstr(move, "DOUB"), dice[0] == dice[1]) {
         win = true;
     } 
 
-    else if (strstr(move[2], "CON") && (dice[0] == atoi(move[3]) || dice[1] == atoi(move[3]))) {
-       win = true;
-    }
+    // else if (strstr(move, "CON") && (dice[0] == atoi(move[3]) || dice[1] == atoi(move[3]))) {
+       // win = true;
+    // }
 
     if (win) {
         sprintf(result, "%d,PASS", player_id);

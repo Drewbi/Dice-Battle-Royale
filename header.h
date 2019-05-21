@@ -26,3 +26,5 @@ struct game_session {
 struct game_session init_game();
 void add_player(struct game_session game, int player_id);
 char** parse_move(char* move);
+int* diceroll();
+char* eval_move(char* move, int* dice, int player_id);
