@@ -67,7 +67,7 @@ int main (int argc, char *argv[]) {
                 printf("am connected...\n");
                 sleep(10);
             }
-        }
+        } // If Game Master
         else {
             printf("Connection being made by player %d\n", client_fd);
             game.player_number++;
