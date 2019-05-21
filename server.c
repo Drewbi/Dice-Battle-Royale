@@ -20,7 +20,6 @@ int main (int argc, char *argv[]) {
         fprintf(stderr,"Usage: %s [port]\n",argv[0]);
         exit(EXIT_FAILURE);
     }
-    
     struct game_session current_game = init_game();
 
     // Set up socket and connection
@@ -60,8 +59,10 @@ int main (int argc, char *argv[]) {
 
 
     // Connect clients
+
     while (true) {
         int pid;
+        int fd[2];
         char* buf = calloc(BUFFER_SIZE, sizeof(char));
         int client_fd = accept(server_fd, (struct sockaddr *) &client, &client_len);  
           
@@ -71,6 +72,10 @@ int main (int argc, char *argv[]) {
             exit(EXIT_FAILURE);
         }
 
+        if (pipe(fd) < 0) {
+            fprintf(stderr, "Couldn't pipe\n");
+        }
+
         pid = fork();
         if (pid < 0) {
             fprintf(stderr,"Can't create child process\n");
@@ -78,7 +83,16 @@ int main (int argc, char *argv[]) {
 
         else if (pid == 0) {
             close(server_fd);
+            close(fd[1]);
             
+            ssize_t fork_read = read(fd[0], &current_game.player_number, sizeof(current_game.player_number));
+            if (fork_read <= 0) {
+                fprintf(stderr, "Could not read from parent\n");
+            }
+
+            printf("As read from parent: %d\n", current_game.player_number);
+            close(fd[0]);
+
             while(true) {
                 printf("Player number from server: %d\n", current_game.player_number);
                 game_session(current_game, client_fd);
@@ -87,6 +101,15 @@ int main (int argc, char *argv[]) {
         else {
             printf("Connection being made by player %d\n", client_fd);
             current_game.player_number++;
+            close(fd[0]);
+
+            write(fd[1], &current_game.player_number, sizeof(current_game.player_number));
+
+            printf("Parent sending value: %d\n", current_game.player_number);
+            
+            close(fd[1]);
+
+
         }
     }
 }
