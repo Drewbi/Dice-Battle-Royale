@@ -25,24 +25,13 @@ server_address = ('localhost', 4444)
 print ('connecting to %s port %s' % server_address)
 sock.connect(server_address)
 
-count=0
-message = 'This is the message.  It will be repeated.'.encode()
 try:
     while True:
     
         exit = False
-        
-        #send the server init packet
-        conn_req = 'Client requesting to connect'.encode()
-        sock.sendall(conn_req)
-
-        # Look for the response
-        amount_received = 0
-        amount_expected = len(message)
-        
-        while amount_received < amount_expected:
+                
+        while True:
             data = sock.recv(1024)
-            amount_received += len(data)
             mess = data.decode()
             client_id = 0
             sock.sendall("INIT".encode())
@@ -56,7 +45,6 @@ try:
                 print(mess)
                 sock.sendall("5,MOV,EVEN".encode())
             elif "REJECT" in mess:
-                print("Got rejected, in the same way your first crush rejected you.")
                 exit = True
                 break
             elif "Goodbye" in mess:

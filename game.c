@@ -2,24 +2,16 @@
 
 struct game_session init_game() {
     struct player *players = calloc(4, sizeof(struct player));
-    int game_rounds =  rand() % 5 + 1;
     int player_number = 0;
-    struct game_session game = { players, player_number, game_rounds };
-
+    struct game_session game = { players, player_number, MAX_ROUNDS };
     return game;
 }
 
 //function invoked when INIT packet sent
-void add_player(struct game_session game, int player_id) {
-    if(game.player_number == 0) {
-        game.session_players[0].client_id = player_id;
-        game.session_players[0].player_lives = 3;
-    }
-    else {
-        game.session_players[game.player_number].client_id = player_id;
-        game.session_players[game.player_number].player_lives = 3;
-    }
-    
+void add_player(struct game_session game, int player_fd) {
+    int i = game.player_number;
+    game.players[i].client_id = player_fd;
+    game.players[i].player_lives = NUM_LIVES;
 }
 
 
@@ -93,7 +85,7 @@ void send_message(char* message, int player_fd, struct game_session game) {
 
 
 
-bool game_session(struct game_session game, int player_fd) {
+bool game_round(struct game_session game, int player_fd) {
     char* buf = calloc(BUFFER_SIZE, sizeof(char));
     int client_read = recv(player_fd, buf, BUFFER_SIZE, 0);
     if (client_read < 0) {

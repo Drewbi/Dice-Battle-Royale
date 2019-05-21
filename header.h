@@ -11,21 +11,24 @@
 
 #define BUFFER_SIZE 1024
 #define MAX_PLAYERS 4
+#define MAX_ROUNDS 10
+#define NUM_LIVES 3
 #define IN_GAME true
 
 struct player {
     int client_id;
     int player_lives;
+    char last_move[14];
 };
 
 struct game_session {
-    struct player *session_players;
+    struct player *players;
     int player_number;
-    int rounds;
+    int max_rounds;
 };
 
 struct game_session init_game();
-void add_player(struct game_session game, int player_id);
+void add_player(struct game_session game, int player_fd);
 char** parse_move(char* move);
 int* diceroll();
 char* eval_move(char* move, int* dice, int player_id);
