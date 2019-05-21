@@ -19,30 +19,26 @@ int main (int argc, char *argv[]) {
         fprintf(stderr,"Usage: %s [port]\n",argv[0]);
         exit(EXIT_FAILURE);
     }
+    struct game_session current_game;
 
+    // Set up socket and connection
     int port = atoi(argv[1]);
 
-    int server_fd, client_fd, err, opt_val;
-    struct sockaddr_in server, client; 
-    struct game_session current_game;
-    char *buf;
-    fd_set read_fds;
-
-    server_fd = socket(AF_INET, SOCK_STREAM, 0);
-
+    int server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd < 0){
         fprintf(stderr,"Could not create socket\n");
         exit(EXIT_FAILURE);
     }
 
+    struct sockaddr_in server; 
     server.sin_family = AF_INET;
     server.sin_port = htons(port);
     server.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    opt_val = 1;
+    int opt_val = 1;
     setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt_val, sizeof opt_val);
 
-    err = bind(server_fd, (struct sockaddr *) &server, sizeof(server));
+    int err = bind(server_fd, (struct sockaddr *) &server, sizeof(server));
     if (err < 0){
         fprintf(stderr,"Could not bind socket\n");
         exit(EXIT_FAILURE);
@@ -56,12 +52,13 @@ int main (int argc, char *argv[]) {
 
     printf("Server is listening on %d\n", port);
 
+    struct sockaddr_in client; 
     socklen_t client_len = sizeof(client);
 
+    // Connect clients
     while (true) {
         int pid;
-        char* buf = calloc(BUFFER_SIZE, sizeof(char));
-        client_fd = accept(server_fd, (struct sockaddr *) &client, &client_len);
+        int client_fd = accept(server_fd, (struct sockaddr *) &client, &client_len);
         if (client_fd < 0) {
             fprintf(stderr,"Could not accept new connection.\n");
             exit(EXIT_FAILURE);
@@ -72,7 +69,7 @@ int main (int argc, char *argv[]) {
         }
         if (pid == 0) {
             close(server_fd);
-
+            char* buf = calloc(BUFFER_SIZE, sizeof(char));
             current_game = init_game();
 
             while(true) {
@@ -97,7 +94,7 @@ int main (int argc, char *argv[]) {
 
                     buf[0] = '\0';
                     recv(client_fd, buf, BUFFER_SIZE, 0);
-                    if((strstr(buf, "INIT"))) {
+                    if(strstr(buf, "INIT")) {
                         if(current_game.player_number <= MAX_PLAYERS) {
                             add_player(current_game, client_fd);
                             current_game.player_number++;
@@ -106,10 +103,7 @@ int main (int argc, char *argv[]) {
                             sprintf(buf, "WELCOME,%d", client_fd);
                             send(client_fd, buf, strlen(buf), 0);
                             sleep(10); 
-                        }
-
-
-                        else {
+                        } else {
                             buf[0] = '\0';
                             sprintf(buf, "REJECT");
                             send(client_fd, buf, strlen(buf), 0);
@@ -127,20 +121,15 @@ int main (int argc, char *argv[]) {
                                 buf[0] = '\0';
                                 sprintf(buf, "ROUND %d OUT OF %d", r, current_game.rounds);
                                 send(client_fd, buf, strlen(buf), 0);
-                                // printf("I GOT HERE\n");
-
-
                                 buf[0] = '\0';
                                 err = recv(client_fd, buf, BUFFER_SIZE, 0);
                                 if(err < 0) {
                                     printf("Error in receiving player move");
                                 }
-                                // printf("NOW I'M HERE\n");
                                 if (strstr(buf, "MOV")) {
                                     printf("PLAYER %d's move: %s\n", client_fd, buf);
                                     char** player_move = parse_move(buf);
                                 }
-                                
                             }
                         }
                     } else {
@@ -149,12 +138,14 @@ int main (int argc, char *argv[]) {
                         send(client_fd, buf, strlen(buf), 0);
                         close(client_fd);
                     }
-
                 }
-                
             }
         }
-        /**
+    }
+}
+
+
+/**
         The following while loop contains some basic code that sends messages back and forth
         between a client (e.g. the socket_client.py client). 
         
@@ -176,7 +167,7 @@ int main (int argc, char *argv[]) {
             * 'Roll' the dice (using a random number generator) and then check if the move made by the user
             is correct
             * update game state depending on success or failure. 
-            
+        
         setup_game/teardown_game() {} : 
             * this will set up the initial state of the game (number of rounds, players
             etc.)/ print out final game results and cancel socket connections. 
@@ -203,8 +194,6 @@ int main (int argc, char *argv[]) {
 
             printf("%s\n", buf);
 
-            // printf("%s\n", buf);
-
             buf[0] = '\0';
             sprintf(buf, "My politely respondance");
             err = send(client_fd, buf, strlen(buf), 0); // Try to send something back
@@ -214,6 +203,3 @@ int main (int argc, char *argv[]) {
            
             free(buf);
         } */
-
-    }
-}
