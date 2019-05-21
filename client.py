@@ -68,6 +68,12 @@ try:
                 print("Server said bye-bye")
                 exit = True
                 break
+            elif "PASS" in mess:
+                print("Passed round!")
+                print(mess)
+            elif "FAIL" in mess:
+                print("Failed round!")
+                print(mess)
             else:
                 print ( 'received "%s"' % mess)
         if exit:
