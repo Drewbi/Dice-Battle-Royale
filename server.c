@@ -83,12 +83,12 @@ int main (int argc, char *argv[]) {
                 if (client_read < 0) {
                     printf("Can't read from client");
                 }
-                // printf("Receiving messeges from %d", client_fd);
+                printf("Receiving messeges from %d", client_fd);
 
                 buf[0] = '\0';
                 sprintf(buf, "Wanna play fortnite?");
                 err = send(client_fd, buf, strlen(buf), 0); 
-                // sleep(5);
+                sleep(5);
 
                 buf[0] = '\0';
                 recv(client_fd, buf, BUFFER_SIZE, 0);
@@ -96,7 +96,7 @@ int main (int argc, char *argv[]) {
                     buf[0] = '\0';
                     sprintf(buf, "Too bad! Because this is EF RNG Battle Royale!");
                     send(client_fd, buf, strlen(buf), 0); 
-                    // sleep(5);
+                    sleep(5);
 
                     buf[0] = '\0';
                     recv(client_fd, buf, BUFFER_SIZE, 0);
@@ -104,11 +104,11 @@ int main (int argc, char *argv[]) {
                         if(current_game.player_number <= MAX_PLAYERS) {
                             add_player(current_game, client_fd);
                             current_game.player_number++;
-
+                            
                             buf[0] = '\0';
                             sprintf(buf, "WELCOME,%d", client_fd);
                             send(client_fd, buf, strlen(buf), 0);
-                            // sleep(10); 
+                            sleep(10); 
                         }
 
                         else {
@@ -122,7 +122,7 @@ int main (int argc, char *argv[]) {
                             buf[0] = '\0';
                             sprintf(buf, "START,%d,%d", current_game.player_number, 3);
                             send(client_fd, buf, strlen(buf), 0);
-                            // sleep(10);
+                            sleep(10);
 
                             while (true) {
                                 int round = 1;
