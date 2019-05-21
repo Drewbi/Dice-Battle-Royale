@@ -11,7 +11,6 @@ struct game_session init_game() {
 
 //function invoked when INIT packet sent
 void add_player(struct game_session game, int player_id) {
-    
     if(game.player_number == 0) {
         game.session_players[0].client_id = player_id;
         game.session_players[0].player_lives = 3;

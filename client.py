@@ -12,7 +12,7 @@ dice rolls are). You will be able to edit this trivially later on; it is often e
 if you know exactly what your expected values are. 
 
 From this, you should be able to bootstrap message-parsing to and from the server whilst making it easy to debug.
-Then, start to add functions in the server code that actually 'run' the game in the background. 
+Then, start to add functions in the server code that actually 'run' the game in the background.  
 """
 
 import socket
