@@ -47,12 +47,13 @@ try:
             client_id = 0
             if "Wanna play fortnite?" in mess:
                 sock.sendall('No. Not in a million years'.encode())
-            if "EF RNG" in mess:
+            if "EF Battle Royale" in mess:
                 sock.sendall("INIT".encode())
             if "My politely respondance" in mess:
                 print("Receieved polite reponse from server")
                 sock.sendall('INIT'.encode())
             if "WELCOME" in mess:
+                print(mess)
                 sock.sendall("HELLO! READY FOR RNG".encode())
             if "START" in mess:
                 print(mess) 
@@ -68,6 +69,9 @@ try:
                 print("Server said bye-bye")
                 exit = True
                 break
+            elif "CANCEL" in mess:
+                print("Game canceled by the server. Closing...")
+                exit = True
             elif "PASS" in mess:
                 print("Passed round!")
                 print(mess)

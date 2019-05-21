@@ -60,8 +60,8 @@ int main (int argc, char *argv[]) {
     while (true) {
         int pid;
         char* buf = calloc(BUFFER_SIZE, sizeof(char));
-        int client_fd = accept(server_fd, (struct sockaddr *) &client, &client_len);
-        current_game = init_game();
+        int client_fd = accept(server_fd, (struct sockaddr *) &client, &client_len);  
+          
 
         if (client_fd < 0) {
             fprintf(stderr,"Could not accept new connection.\n");
@@ -73,9 +73,17 @@ int main (int argc, char *argv[]) {
             fprintf(stderr,"Can't create child process\n");
         }
 
-        if (pid == 0) {
+        else if (pid == 0) {
+
+            current_game.player_number++;
+            printf("Setting player count up one");
             close(server_fd);
+            
             while(true) {
+                printf("Player number from server: %d\n", current_game.player_number);
+                game_session(current_game, client_fd);
+
+                /*
                 int client_read = recv(client_fd, buf, BUFFER_SIZE, 0);
                 if (client_read < 0) {
                     printf("Can't read from client");
@@ -157,8 +165,13 @@ int main (int argc, char *argv[]) {
                         send(client_fd, buf, strlen(buf), 0);
                         close(client_fd);
                     }
-                }
-            }
+
+                } */
+                
+            } 
+        }
+        else {
+            printf("Connection being made by player %d\n", client_fd);
         }
     }
 }
