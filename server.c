@@ -107,7 +107,13 @@ int main (int argc, char *argv[]) {
             }
         }
 
+        // array of forked process's stdin
 
+       // wile (true) {
+            // if all subproceess stdin closed but one or 0 (if thyehen send winner - tell the winner by which stdin tats open
+            // else sleep
+            // shut down last subprocess
+        //}
 
         // if (pipe(fd) < 0) {
         //     fprintf(stderr, "Couldn't pipe\n");
