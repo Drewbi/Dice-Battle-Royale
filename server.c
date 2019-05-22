@@ -14,6 +14,9 @@
  */
 
 #include "header.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 int main (int argc, char *argv[]) {
     if (argc < 2) {
@@ -104,6 +107,23 @@ int main (int argc, char *argv[]) {
                 while (true) {
                     game_session(current_game, client_fds[i]);
                 }
+            }
+        }
+
+        while (true) {
+            int num_closed = MAX_PLAYERS;
+            int winner_id = -1;
+            for (int i = 0; i < current_game.player_number; i++) {
+                struct stat client_stat_buf;
+                if (fstat(client_fds[i], &client_stat_buf) == -1) {
+                    num_closed -= 1;
+                } else {
+                    winner_id = i;
+                }
+            }
+            if (num_closed == MAX_PLAYERS - 1) {
+                sprintf(buf, "You win!\n");
+                write(client_fds[winner_id], buf, strlen(buf));
             }
         }
 
