@@ -12,12 +12,27 @@ struct game_session init_game() {
     return game;
 }
 
-int* diceroll() {
+void reject_player(int client_fd){
+    char* response = calloc(BUFFER_SIZE, sizeof(char));
+    response[0] = '\0';
+    sprintf(response, "REJECT");
+    send(client_fd, response, strlen(response), 0);
+    printf("Rejecting player...\n");
+}
+
+int* roll_dice() {
     int *result;
     result = (int *) malloc(sizeof(int) * 2);
     result[0] = rand() % 6 + 1;
     result[1] = rand() % 6 + 1; 
     return result;
+}
+
+void send_dice(int client_fd, int* dice){
+    char* response = calloc(BUFFER_SIZE, sizeof(char));
+    response[0] = '\0';
+    sprintf(response, "DICE,%d,%d", dice[0], dice[1]);
+    send(client_fd, response, strlen(response), 0);
 }
 
 void send_message(char* message, int client_id, struct game_session game) {
@@ -31,13 +46,6 @@ void send_message(char* message, int client_id, struct game_session game) {
         printf("Player %d has joined.\n", client_id);
     }
 
-    else if (strstr(message, "REJECT")) {
-        response[0] = '\0';
-        sprintf(response, "REJECT");
-        send(client_fd, response, strlen(response), 0);
-        printf("Rejecting player...\n");
-    }
-
     else if(strstr(message, "START")) {
         response[0] = '\0';
         sprintf(response, "START,%d,%d", game.player_number, PLAYER_LIVES);
@@ -49,7 +57,7 @@ void send_message(char* message, int client_id, struct game_session game) {
         response[0] = '\0';
         sprintf(response, "CANCEL");
         send(client_fd, response, strlen(response), 0);
-        printf("Not enough players, canceling...\n", client_id);
+        printf("Not enough players, canceling...\n");
     }
 
     else if (strstr(message, "PASS")) {
@@ -91,27 +99,45 @@ void send_message(char* message, int client_id, struct game_session game) {
 }
 
 
-char* eval_move(char* message, int* dice, int client_id, struct game_session game) {
+bool eval_move(char* message, int* dice, int client_id, struct game_session game) {
     bool pass = false;
-
+    printf("Message received from %d as: %s\n", client_id, message);
     // Get incoming player id
     int player_id;
-    char * token = strtok(message, ',');
+    char * token = strtok(message, ",");
     if (token != NULL) {
         player_id = atoi(token);
     } else {
+        return false;
+    }
+    if(player_id == 0 && strstr(token, "0") == NULL){
         player_id = -1;
     }
-    if (player_id == 0 || player_id != client_id){
+    if (player_id != client_id){
         printf("Player id from %d is invalid.\n", client_id);
+        send_message("KICK", client_id, game);
     }
 
     // Get incoming move
     char* move;
-    token = strtok(NULL, ',');
+    token = strtok(NULL, ",");
     if (token != NULL) {
         move = strdup(token);
     } else {
+        move = "NONE";
+        printf("Player move from %d is invalid.\n", client_id);
+    }
+
+    if(strstr(move, "MOV") != NULL){
+        token = strtok(NULL, ",");
+        if (token != NULL) {
+            move = strdup(token);
+        } else {
+            move = "NONE";
+            printf("Player move from %d is invalid.\n", client_id);
+        }
+    } else {
+        move = "NONE";
         printf("Player move from %d is invalid.\n", client_id);
     }
     
@@ -134,16 +160,16 @@ char* eval_move(char* message, int* dice, int client_id, struct game_session gam
 
     else if (strstr(move, "CON")) {
         int guess;
-        token = strtok(NULL, ',');
+        token = strtok(NULL, ",");
         if (token != NULL) {
             guess = atoi(token);
         } else {
             printf("Player %d guessed contains empty.\n", client_id);
         }
-        if (guess == 0 || guess > 6){
-            // If player submits string instead of number they will be unfortunately kicked with the cheaters
+        if (strstr(token, "0") || guess > 6){
             send_message("KICK", client_id, game);
         }
+        printf("Guess is %d vs dice %d %d\n", guess, dice[0], dice[1]);
         if(dice[0] == guess || dice[1] == guess) {
             pass = true;
             printf("Player %d has passed from guessing %d.\n", client_id, guess);
@@ -157,3 +183,10 @@ char* eval_move(char* message, int* dice, int client_id, struct game_session gam
     return pass;
 }
 
+char* get_message(int client_id, struct game_session game){
+    char* buf = calloc(BUFFER_SIZE, sizeof(char));
+    int client_fd = game.players[client_id].client_fd;
+    buf[0] = '\0';
+    recv(client_fd, buf, BUFFER_SIZE, 0);
+    return buf;
+}

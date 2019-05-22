@@ -9,7 +9,7 @@
 #include <sys/time.h>
 #include <errno.h>
 
-#define MSGSIZE 12
+#define MSGSIZE 14
 #define BUFFER_SIZE 1024
 #define MAX_PLAYERS 4
 #define MAX_ROUNDS 10
@@ -28,6 +28,10 @@ struct game_session {
 };
 
 struct game_session init_game();
-int* diceroll();
+void reject_player(int client_fd);
+int* roll_dice();
+void send_dice(int client_fd, int* dice);
 void send_message(char* message, int client_id, struct game_session game);
-char* eval_move(char* move, int* dice, int client_id, struct game_session game);
+bool eval_move(char* move, int* dice, int client_id, struct game_session game);
+char* get_message(int client_id, struct game_session game);
+

@@ -24,56 +24,65 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_address = ('localhost', 4444)
 print ('connecting to %s port %s' % server_address)
 sock.connect(server_address)
+sock.sendall("INIT".encode())
+print("Sending INIT")
 client_id = 0
 players = 0
 lives = 0
 last_msg = ""
-try:
+try:    
+    exit = False        
     while True:
-    
-        exit = False
-        
-        #send the server init packet
-        sock.sendall("INIT".encode())
-        packet_size = 14
-        packet_received = 0
-
-        while packet_received < packet_size:
-            data = sock.recv(1024)
-            packet_received += len(data)
-            mess = data.decode()
-            
-            if "WELCOME" in mess:
-                print(mess)
-                last_msg, client_id = mess.split(",")
-            elif "START" in mess:
-                print(mess) 
-                last_msg, players, lives = mess.split(",")
-                sock.sendall((client_id + ",MOV,EVEN").encode())  
-            elif "REJECT" in mess:
-                print("Got rejected, exiting...")
-                exit = True
-                break
-            elif "CANCEL" in mess:
-                print("Game canceled by the server. Closing...")
-                exit = True
-                break
-            elif "PASS" in mess:
-                print("Passed round!")
-                print(mess)
-            elif "FAIL" in mess:
-                print("Failed round!")
-                print(mess)
-            elif "VICT" in mess:
-                print("WE WON!")
-                print(mess)
-            elif "KICK" in mess:
-                print("Kicked from game.")
-                print(mess)
-                exit = True
-                break
-            else:
-                print ( 'received "%s"' % mess)
+        data = sock.recv(1024)
+        mess = data.decode()
+        if "WELCOME" in mess:
+            print(mess)
+            last_msg, client_id = mess.split(",")
+        elif "START" in mess:
+            print(mess) 
+            last_msg, players, lives = mess.split(",")
+            lives = int(lives)
+            move = client_id + ",MOV,EVEN"
+            print("Sending move: " + move)
+            sock.sendall((move).encode())
+        elif "PASS" in mess:
+            print("Passed round!")
+            print(mess)
+            move = client_id + ",MOV,DOUB"
+            print("Sending move: " + move)
+            sock.sendall((move).encode())
+        elif "FAIL" in mess:
+            print("Failed round!")
+            print(mess)
+            lives -= 1
+            move = client_id + ",MOV,CON,2"
+            print("Sending move: " + move)
+            sock.sendall((move).encode())
+        elif "REJECT" in mess:
+            print("Got rejected, exiting...")
+            exit = True
+            break
+        elif "CANCEL" in mess:
+            print("Game canceled by the server. Closing...")
+            exit = True
+            break
+        elif "KICK" in mess:
+            print("Kicked from game.")
+            print(mess)
+            exit = True
+            break
+        else:
+            print ( 'received "%s"' % mess)
+        if "VICT" in mess:
+            print("WE WON!")
+            print(mess)
+            exit = True
+            break
+        elif "ELIM" in mess:
+            print("We lost :(")
+            print(mess)
+            exit = True
+            break
         if exit:
             break
 finally: 

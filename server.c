@@ -29,15 +29,12 @@ int main (int argc, char *argv[]) {
     }
    
 
-    // Set up socket and connection
     int port = atoi(argv[1]);
 
     int server_fd = create_socket(port);
 
     struct sockaddr_in client; 
     socklen_t client_len = sizeof(client);
-
-    // Connect clients
 
     struct game_session game = init_game();
     
@@ -46,13 +43,14 @@ int main (int argc, char *argv[]) {
         int fd[2];
         char* buf = calloc(BUFFER_SIZE, sizeof(char));
         int client_fd = accept(server_fd, (struct sockaddr *) &client, &client_len);
-        printf("Connection being made");  
+        printf("Connection being made\n");  
         if (client_fd < 0) {
             fprintf(stderr,"Could not accept new connection.\n");
             exit(EXIT_FAILURE);
         }
         
         if (game.player_number < MAX_PLAYERS) {
+            buf = calloc(BUFFER_SIZE, sizeof(char));
             buf[0] = '\0';
             recv(client_fd, buf, BUFFER_SIZE, 0);
             if (strstr(buf, "INIT") != NULL){
@@ -60,7 +58,6 @@ int main (int argc, char *argv[]) {
                 send_message("WELCOME", game.player_number, game);
                 printf("Player number %d has joined.\n", game.player_number);
                 game.player_number++;
-                
             }
             else reject_player(client_fd);
         }
@@ -84,9 +81,32 @@ int main (int argc, char *argv[]) {
         for (int i = 0; i < game.player_number; i++) {
             pid = fork();
             if (pid == 0) { // Client communication processes
-                start_session(i, game);
+                int client_id = i;
+                int client_fd = game.players[i].client_fd;
+                send_message("START", client_id, game);
+                
                 while(run){
-                    
+                    game.rounds++;
+                    sleep(3);
+                    char* message = get_message(client_id, game);
+                    int roll[2] = roll_dice();
+                    // send_dice(client_fd, roll); Option to send dice to client
+                    bool passed = eval_move(message, roll, client_id, game);
+                    if (passed) {
+                        send_message("PASS", client_id, game);
+                    }
+                    else {
+                        send_message("FAIL", client_id, game);
+                        game.players[client_id].player_lives--;
+                    }
+
+                    if (game.players[client_id].player_lives == 0){
+                        send_message("ELIM", client_id, game);
+                        exit(0);
+                    }
+                    if(game.rounds == MAX_ROUNDS){
+                        send_message("VICT", client_id, game);
+                    }
                 }
             }
         }
