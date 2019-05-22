@@ -61,13 +61,13 @@ void deduct_player_lives(int player_fd, struct game_session game) {
 void send_message(char* message, int player_fd, struct game_session game) {
     char* response = calloc(BUFFER_SIZE, sizeof(char));
     
-    if (strstr(message, "INIT") && game.player_number < MAX_PLAYERS) {
+    if (strstr(message, "INIT")) {
         response[0] = '\0';
         sprintf(response, "WELCOME,%d", player_fd);
         send(player_fd, response, strlen(response), 0);
     }
     
-    else if (strstr(message, "INIT") && game.player_number == MAX_PLAYERS) {
+    else if (strstr(message, "REJECT")) {
         response[0] = '\0';
         sprintf(response, "REJECT");
         send(player_fd, response, strlen(response), 0);
@@ -149,48 +149,37 @@ char* eval_move(char* move, int* dice, int player_id) {
 }
 
 bool game_session(struct game_session game, int player_fd) {
+    printf("Hello from game session! \n");
     char* buf = calloc(BUFFER_SIZE, sizeof(char));
-    int client_read = recv(player_fd, buf, BUFFER_SIZE, 0);
-    if (client_read < 0) {
-        printf("Can't read from the client\n");
-    }
 
-    if (game.player_number > 0) {
-        printf("Waiting for more players...\n");
-    }
+    // printf("Player: %d, Player number inside game loop %d\n", player_fd, game.player_number);
+
 
     buf[0] = '\0';
-    sprintf(buf, "Welcome to EF Battle Royale!");
+    printf("Ready to start player %d?\n", player_fd);
+    sprintf(buf, "Send INIT Packet now!");
     send(player_fd, buf, strlen(buf), 0);
     sleep(5);
 
     buf[0] = '\0';
     recv(player_fd, buf, BUFFER_SIZE, 0);
     send_message(buf, player_fd, game);
-    printf("I have recieved your message %d\n", player_fd);
-    add_player(game, player_fd);
-    printf("Player number: %d\n", game.player_number);
-    sleep(30);
-
-    // if (game.player_number >= 1) {
-        send_message("START", player_fd, game);
-        sleep(15);
-
-        buf[0] = '\0';
-        recv(player_fd, buf, BUFFER_SIZE, 0);
-        printf("Player %d's move: %s\n", player_fd, buf);
-        send_message(buf, player_fd, game);
-
-        sleep(15);
-
-
-    /* }
-    else {
-        printf("Not enough players. Cancelling game...\n");
-        send_message("CANCEL", player_fd, game);
-        close(player_fd);
-    } */
+    sleep(5);
+    // printf("Player %d joined the game!\n", player_fd);
     
+    // printf("Player number from game loop: %d\n", game.player_number);
+    printf("Game will start shortly...\n");
+    sleep(10);
+
+    send_message("START", player_fd, game);
+    sleep(10);
+
+    buf[0] = '\0';
+    recv(player_fd, buf, BUFFER_SIZE, 0);
+    printf("Player %d's move: %s\n", player_fd, buf);
+    send_message(buf, player_fd, game);
+
+    sleep(15);
 
     return IN_GAME;
 }

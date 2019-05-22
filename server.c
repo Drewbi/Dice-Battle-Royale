@@ -58,56 +58,140 @@ int main (int argc, char *argv[]) {
 
     // Connect clients
 
+    int client_1_fd = -1;
+    int client_2_fd = -1;
+
+    int client_fds[4] = { -1, -1, -1, -1 };
+    
     while (true) {
         int pid;
         int fd[2];
         char* buf = calloc(BUFFER_SIZE, sizeof(char));
-        int client_fd = accept(server_fd, (struct sockaddr *) &client, &client_len);  
+        
+        int client_fd = accept(server_fd, (struct sockaddr *) &client, &client_len);
+        
           
+        // if too many connections send reject
 
         if (client_fd < 0) {
             fprintf(stderr,"Could not accept new connection.\n");
             exit(EXIT_FAILURE);
         }
 
-        if (pipe(fd) < 0) {
-            fprintf(stderr, "Couldn't pipe\n");
+        if (current_game.player_number == MAX_PLAYERS) {
+            buf[0] = '\0';
+            sprintf(buf, "REJECT");
+            send(client_fd, buf, strlen(buf), 0);
+            close(client_fd);
+            continue;
         }
 
-        pid = fork();
-        if (pid < 0) {
-            fprintf(stderr,"Can't create child process\n");
+
+        client_fds[current_game.player_number] = client_fd;
+
+        current_game.player_number += 1;
+
+        if (current_game.player_number < MAX_PLAYERS) {
+            sleep(1);
+            continue;
         }
 
-        else if (pid == 0) {
-            close(server_fd);
-            close(fd[1]);
-            
-            ssize_t fork_read = read(fd[0], &current_game.player_number, sizeof(current_game.player_number));
-            if (fork_read <= 0) {
-                fprintf(stderr, "Could not read from parent\n");
+        // printf("N: %d, 1: %d, 2: %d\n", current_game.player_number, client_1_fd, client_2_fd);
+
+        for (int i = 0; i < current_game.player_number; i++) {
+            pid = fork();
+            if (pid == 0) {
+                while (true) {
+                    game_session(current_game, client_fds[i]);
+                }
             }
-
-            // printf("As read from parent: %d\n", current_game.player_number);
-            close(fd[0]);
-
-            while(true) {
-                // printf("Player number from server: %d\n", current_game.player_number);
-                game_session(current_game, client_fd);
-            } 
         }
-        else {
-            printf("Connection being made by player %d\n", client_fd);
-            current_game.player_number++;
-            close(fd[0]);
 
-            write(fd[1], &current_game.player_number, sizeof(current_game.player_number));
 
-            // printf("Parent sending value: %d\n", current_game.player_number);
+
+        // if (pipe(fd) < 0) {
+        //     fprintf(stderr, "Couldn't pipe\n");
+        // }
+
+        // pid = fork();
+        // int my_client_id = client_fd;
+        // if (pid < 0) {
+        //     fprintf(stderr,"Can't create child process\n");
+        // }
+
+        // else if (pid == 0) {
+        //     close(server_fd);
+        //     close(fd[1]);
+
+        //     while(true) {
+        //         printf("Player number in child: %d\n", current_game.player_number);
             
-            close(fd[1]);
+        //         ssize_t fork_read = read(fd[0], &current_game.player_number, sizeof(current_game.player_number));
+
+        //         printf("%d fork read bytes: %ld current players: %d client id: %d\n", pid, fork_read, current_game.player_number, my_client_id);
+        //         if (fork_read <= 0) {
+        //             fprintf(stderr, "Could not read from parent\n");
+        //         }
+
+        //         // printf("As read from parent: %d\n", current_game.player_number);
+        //         // close(fd[0]);
+                
+        //         if (current_game.player_number < 2) {
+        //             printf("Waiting for more players...\n");
+        //             sleep(20);
+                    
+        //         } else {
+        //             game_session(current_game, my_client_id);
+        //         }
+                
 
 
-        }
+        //         /*
+        //         send_message("WELCOME", client_fd, current_game);
+        //         add_player(current_game, client_fd);
+        //         sleep(5);
+
+        //         printf("Game will start shortly...\n");
+        //         sleep(30);
+
+        //         send_message("START", client_fd, current_game);
+        //         sleep(15);
+            
+            
+        //         printf("Waiting for more players...\n");
+        //         sleep(20);
+        //         */
+        //     } 
+        // }
+        // else {
+        //     printf("Connection being made by player %d\n", client_fd);
+        //     buf[0] = '\0';
+        //     sprintf(buf, "Send INIT to play EF Battle Royale!");
+        //     send(client_fd, buf, strlen(buf), 0);
+        //     sleep(5);
+
+        //     buf[0] = '\0';
+        //     recv(client_fd, buf, BUFFER_SIZE, 0);
+        //     if (strstr(buf, "INIT") && current_game.player_number < MAX_PLAYERS) {
+        //         current_game.player_number++;
+        //         printf("%d has sent INIT packet!\n", client_fd);
+        //         printf("Player number: %d\n", current_game.player_number);
+        //     }
+        //     else {
+        //         buf[0] = '\0';
+        //         sprintf(buf, "REJECT");
+        //         send(client_fd, buf, strlen(buf), 0);
+        //         close(client_fd);
+        //     }
+            
+        
+        //     close(fd[0]);
+
+        //     write(fd[1], &current_game.player_number, sizeof(current_game.player_number));
+            
+        //     // close(fd[1]);
+
+
+        // }
     }
 }

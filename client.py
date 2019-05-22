@@ -47,18 +47,15 @@ try:
             client_id = 0
             if "Wanna play fortnite?" in mess:
                 sock.sendall('No. Not in a million years'.encode())
-            if "EF Battle Royale" in mess:
+            elif "INIT" in mess:
                 sock.sendall("INIT".encode())
-            if "My politely respondance" in mess:
-                print("Receieved polite reponse from server")
-                sock.sendall('INIT'.encode())
-            if "WELCOME" in mess:
+            elif "WELCOME" in mess:
                 print(mess)
                 sock.sendall("HELLO! READY FOR RNG".encode())
-            if "START" in mess:
+            elif "START" in mess:
                 print(mess) 
                 sock.sendall("5,MOV,EVEN".encode())
-            if "OUT OF" in mess:
+            elif "OUT OF" in mess:
                 print(mess)
             elif "LIVES LEFT" in mess:
                 print(mess)   
