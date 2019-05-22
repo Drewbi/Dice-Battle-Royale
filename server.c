@@ -18,16 +18,101 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+int create_socket(int port);
+
+int run = 1;
+
 int main (int argc, char *argv[]) {
     if (argc < 2) {
         fprintf(stderr,"Usage: %s [port]\n",argv[0]);
         exit(EXIT_FAILURE);
     }
-    struct game_session current_game = init_game();
+   
 
     // Set up socket and connection
     int port = atoi(argv[1]);
 
+    int server_fd = create_socket(port);
+
+    struct sockaddr_in client; 
+    socklen_t client_len = sizeof(client);
+
+    // Connect clients
+
+    struct game_session game = init_game();
+    
+    while (run) {
+        int pid;
+        int fd[2];
+        char* buf = calloc(BUFFER_SIZE, sizeof(char));
+        int client_fd = accept(server_fd, (struct sockaddr *) &client, &client_len);
+        printf("Connection being made");  
+        if (client_fd < 0) {
+            fprintf(stderr,"Could not accept new connection.\n");
+            exit(EXIT_FAILURE);
+        }
+        
+        if (game.player_number < MAX_PLAYERS) {
+            buf[0] = '\0';
+            recv(client_fd, buf, BUFFER_SIZE, 0);
+            if (strstr(buf, "INIT") != NULL){
+                game.players[game.player_number].client_fd = client_fd;
+                send_message("WELCOME", game.player_number, game);
+                printf("Player number %d has joined.\n", game.player_number);
+                game.player_number++;
+                
+            }
+            else reject_player(client_fd);
+        }
+        
+        if (game.player_number == MAX_PLAYERS) {
+            pid = fork();
+            if(pid == 0){
+                while(run){
+                    int client_fd = accept(server_fd, (struct sockaddr *) &client, &client_len);
+                    reject_player(client_fd);
+                }
+                exit(0);
+            }
+        }
+
+        if (game.player_number < MAX_PLAYERS) {
+            sleep(1);
+            continue;
+        }
+
+        for (int i = 0; i < game.player_number; i++) {
+            pid = fork();
+            if (pid == 0) { // Client communication processes
+                start_session(i, game);
+                while(run){
+                    
+                }
+            }
+        }
+
+        while (run) { // Game master process
+            int num_closed = MAX_PLAYERS;
+            int winner_id = -1;
+            for (int i = 0; i < game.player_number; i++) {
+                struct stat client_stat_buf;
+                if (fstat(game.players[i].client_fd, &client_stat_buf) == -1) {
+                    num_closed -= 1;
+                    printf("Player %d has disconnected\n", i);
+                } else {
+                    winner_id = i;
+                }
+            }
+            if (num_closed == MAX_PLAYERS - 1) {
+                sprintf(buf, "%d,VICT", winner_id);
+                write(game.players[winner_id].client_fd, buf, strlen(buf));
+                run = 0;
+            }
+        }
+    }
+}
+
+int create_socket(int port){
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd < 0){
         fprintf(stderr,"Could not create socket\n");
@@ -40,7 +125,7 @@ int main (int argc, char *argv[]) {
     server.sin_addr.s_addr = htonl(INADDR_ANY);
 
     int opt_val = 1;
-    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt_val, sizeof opt_val);
+    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt_val, sizeof(opt_val));
 
     int err = bind(server_fd, (struct sockaddr *) &server, sizeof(server));
     if (err < 0){
@@ -55,169 +140,8 @@ int main (int argc, char *argv[]) {
     } 
 
     printf("Server is listening on %d\n", port);
-
-    struct sockaddr_in client; 
-    socklen_t client_len = sizeof(client);
-
-    // Connect clients
-
-    int client_1_fd = -1;
-    int client_2_fd = -1;
-
-    int client_fds[4] = { -1, -1, -1, -1 };
-    
-    while (true) {
-        int pid;
-        int fd[2];
-        char* buf = calloc(BUFFER_SIZE, sizeof(char));
-        
-        int client_fd = accept(server_fd, (struct sockaddr *) &client, &client_len);
-        
-          
-        // if too many connections send reject
-
-        if (client_fd < 0) {
-            fprintf(stderr,"Could not accept new connection.\n");
-            exit(EXIT_FAILURE);
-        }
-
-        if (current_game.player_number == MAX_PLAYERS) {
-            buf[0] = '\0';
-            sprintf(buf, "REJECT");
-            send(client_fd, buf, strlen(buf), 0);
-            close(client_fd);
-            continue;
-        }
-
-
-        client_fds[current_game.player_number] = client_fd;
-
-        current_game.player_number += 1;
-
-        if (current_game.player_number < MAX_PLAYERS) {
-            sleep(1);
-            continue;
-        }
-
-        // printf("N: %d, 1: %d, 2: %d\n", current_game.player_number, client_1_fd, client_2_fd);
-
-        for (int i = 0; i < current_game.player_number; i++) {
-            pid = fork();
-            if (pid == 0) {
-                while (true) {
-                    game_session(current_game, client_fds[i]);
-                }
-            }
-        }
-
-        while (true) {
-            int num_closed = MAX_PLAYERS;
-            int winner_id = -1;
-            for (int i = 0; i < current_game.player_number; i++) {
-                struct stat client_stat_buf;
-                if (fstat(client_fds[i], &client_stat_buf) == -1) {
-                    num_closed -= 1;
-                } else {
-                    winner_id = i;
-                }
-            }
-            if (num_closed == MAX_PLAYERS - 1) {
-                sprintf(buf, "You win!\n");
-                write(client_fds[winner_id], buf, strlen(buf));
-            }
-        }
-
-        // array of forked process's stdin
-
-       // wile (true) {
-            // if all subproceess stdin closed but one or 0 (if thyehen send winner - tell the winner by which stdin tats open
-            // else sleep
-            // shut down last subprocess
-        //}
-
-        // if (pipe(fd) < 0) {
-        //     fprintf(stderr, "Couldn't pipe\n");
-        // }
-
-        // pid = fork();
-        // int my_client_id = client_fd;
-        // if (pid < 0) {
-        //     fprintf(stderr,"Can't create child process\n");
-        // }
-
-        // else if (pid == 0) {
-        //     close(server_fd);
-        //     close(fd[1]);
-
-        //     while(true) {
-        //         printf("Player number in child: %d\n", current_game.player_number);
-            
-        //         ssize_t fork_read = read(fd[0], &current_game.player_number, sizeof(current_game.player_number));
-
-        //         printf("%d fork read bytes: %ld current players: %d client id: %d\n", pid, fork_read, current_game.player_number, my_client_id);
-        //         if (fork_read <= 0) {
-        //             fprintf(stderr, "Could not read from parent\n");
-        //         }
-
-        //         // printf("As read from parent: %d\n", current_game.player_number);
-        //         // close(fd[0]);
-                
-        //         if (current_game.player_number < 2) {
-        //             printf("Waiting for more players...\n");
-        //             sleep(20);
-                    
-        //         } else {
-        //             game_session(current_game, my_client_id);
-        //         }
-                
-
-
-        //         /*
-        //         send_message("WELCOME", client_fd, current_game);
-        //         add_player(current_game, client_fd);
-        //         sleep(5);
-
-        //         printf("Game will start shortly...\n");
-        //         sleep(30);
-
-        //         send_message("START", client_fd, current_game);
-        //         sleep(15);
-            
-            
-        //         printf("Waiting for more players...\n");
-        //         sleep(20);
-        //         */
-        //     } 
-        // }
-        // else {
-        //     printf("Connection being made by player %d\n", client_fd);
-        //     buf[0] = '\0';
-        //     sprintf(buf, "Send INIT to play EF Battle Royale!");
-        //     send(client_fd, buf, strlen(buf), 0);
-        //     sleep(5);
-
-        //     buf[0] = '\0';
-        //     recv(client_fd, buf, BUFFER_SIZE, 0);
-        //     if (strstr(buf, "INIT") && current_game.player_number < MAX_PLAYERS) {
-        //         current_game.player_number++;
-        //         printf("%d has sent INIT packet!\n", client_fd);
-        //         printf("Player number: %d\n", current_game.player_number);
-        //     }
-        //     else {
-        //         buf[0] = '\0';
-        //         sprintf(buf, "REJECT");
-        //         send(client_fd, buf, strlen(buf), 0);
-        //         close(client_fd);
-        //     }
-            
-        
-        //     close(fd[0]);
-
-        //     write(fd[1], &current_game.player_number, sizeof(current_game.player_number));
-            
-        //     // close(fd[1]);
-
-
-        // }
-    }
+    return server_fd;
 }
+
+
+

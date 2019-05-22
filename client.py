@@ -24,62 +24,59 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_address = ('localhost', 4444)
 print ('connecting to %s port %s' % server_address)
 sock.connect(server_address)
-
-count=0
-message = 'This is the message.  It will be repeated.'.encode()
+client_id = 0
+players = 0
+lives = 0
+last_msg = ""
 try:
     while True:
     
         exit = False
         
         #send the server init packet
-        conn_req = 'Client requesting to connect'.encode()
-        sock.sendall(conn_req)
+        sock.sendall("INIT".encode())
+        packet_size = 14
+        packet_received = 0
 
-        # Look for the response
-        amount_received = 0
-        amount_expected = len(message)
-        
-        while amount_received < amount_expected:
+        while packet_received < packet_size:
             data = sock.recv(1024)
-            amount_received += len(data)
+            packet_received += len(data)
             mess = data.decode()
-            client_id = 0
-            if "Wanna play fortnite?" in mess:
-                sock.sendall('No. Not in a million years'.encode())
-            elif "INIT" in mess:
-                sock.sendall("INIT".encode())
-            elif "WELCOME" in mess:
+            
+            if "WELCOME" in mess:
                 print(mess)
-                sock.sendall("HELLO! READY FOR RNG".encode())
+                last_msg, client_id = mess.split(",")
             elif "START" in mess:
                 print(mess) 
-                sock.sendall("5,MOV,EVEN".encode())
-            elif "OUT OF" in mess:
-                print(mess)
-            elif "LIVES LEFT" in mess:
-                print(mess)   
+                last_msg, players, lives = mess.split(",")
+                sock.sendall((client_id + ",MOV,EVEN").encode())  
             elif "REJECT" in mess:
-                print("Got rejected, in the same way your first crush rejected you.")
-                exit = True
-                break
-            elif "Goodbye" in mess:
-                print("Server said bye-bye")
+                print("Got rejected, exiting...")
                 exit = True
                 break
             elif "CANCEL" in mess:
                 print("Game canceled by the server. Closing...")
                 exit = True
+                break
             elif "PASS" in mess:
                 print("Passed round!")
                 print(mess)
             elif "FAIL" in mess:
                 print("Failed round!")
                 print(mess)
+            elif "VICT" in mess:
+                print("WE WON!")
+                print(mess)
+            elif "KICK" in mess:
+                print("Kicked from game.")
+                print(mess)
+                exit = True
+                break
             else:
                 print ( 'received "%s"' % mess)
         if exit:
             break
-finally:    
+finally: 
+    sock.close()   
     print ('closing socket')
-    sock.close()
+    

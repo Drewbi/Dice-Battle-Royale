@@ -9,24 +9,25 @@
 #include <sys/time.h>
 #include <errno.h>
 
+#define MSGSIZE 12
 #define BUFFER_SIZE 1024
 #define MAX_PLAYERS 4
-#define IN_GAME true
+#define MAX_ROUNDS 10
+#define PLAYER_LIVES 5
 
 struct player {
-    int client_id;
+    int client_fd;
+    int player_num;
     int player_lives;
 };
 
 struct game_session {
-    struct player *session_players;
+    struct player *players;
     int player_number;
     int rounds;
 };
 
 struct game_session init_game();
-void add_player(struct game_session game, int player_id);
 int* diceroll();
-char* eval_move(char* move, int* dice, int player_id);
-void send_message(char* message, int player_fd, struct game_session game);
-bool game_session(struct game_session game, int player_fd);
+void send_message(char* message, int client_id, struct game_session game);
+char* eval_move(char* move, int* dice, int client_id, struct game_session game);
