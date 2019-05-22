@@ -37,8 +37,12 @@ int main (int argc, char *argv[]) {
 
     while (true) {
         
-        int socket[2];
-        if (pipe(socket) < 0) {
+        int pipe2c[2];
+        int pipe2p[2];
+        if (pipe(pipe2c) < 0) {
+            fprintf(stderr, "Couldn't pipe\n");
+        }
+        if (pipe(pipe2p) < 0) {
             fprintf(stderr, "Couldn't pipe\n");
         }
 
@@ -48,18 +52,17 @@ int main (int argc, char *argv[]) {
         if (pid < 0) {
             fprintf(stderr,"Can't create child process\n");
         }
-
+        // If is child
         if (pid == 0) {
             close(server_fd);
-            close(socket[1]);
-            
-            ssize_t fork_read = read(socket[0], &game.player_number, sizeof(game.player_number));
+            close(pipe2p[1]);
+
+            ssize_t fork_read = read(pipe2c[0], &game.player_number, sizeof(game.player_number));
             if (fork_read <= 0) {
                 fprintf(stderr, "Could not read from parent\n");
             }
 
             printf("As read from parent: %d\n", game.player_number);
-            close(socket[0]);
 
             while(true) {
                 //printf("Player number from server: %d\n", game.player_number);
@@ -72,13 +75,11 @@ int main (int argc, char *argv[]) {
             printf("Connection being made by player %d\n", client_fd);
             game.player_number++;
             printf("Player number %d has joined\n", game.player_number);
-            close(socket[0]);
 
-            write(socket[1], &game.player_number, sizeof(game.player_number));
+            write(pipe2c[1], &game.player_number, sizeof(game.player_number));
 
             printf("Parent sending value: %d\n", game.player_number);
             
-            close(socket[1]);
         }
     }
 }

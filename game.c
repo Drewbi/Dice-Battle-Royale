@@ -14,7 +14,6 @@ void add_player(struct game_session game, int player_fd) {
     game.players[i].player_lives = NUM_LIVES;
 }
 
-
 int* diceroll() {
     int *result;
 
