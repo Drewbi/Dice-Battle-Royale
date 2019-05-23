@@ -74,10 +74,8 @@ int main (int argc, char *argv[]) {
             sleep(1);
             continue;
         }
-        int children_pid[game.player_number];
         for (int i = 0; i < game.player_number; i++) {
             pid = fork();
-            cildren_pid[i] = pid;
             if (pid == 0) { // Client communication processes
                 int client_id = i;
                 int client_fd = game.players[i].client_fd;
