@@ -89,7 +89,7 @@ int main (int argc, char *argv[]) {
                     game.rounds++;
                     sleep(3);
                     char* message = get_message(client_id, game);
-                    int roll[2] = roll_dice();
+                    int* roll = roll_dice();
                     // send_dice(client_fd, roll); Option to send dice to client
                     bool passed = eval_move(message, roll, client_id, game);
                     if (passed) {
@@ -143,9 +143,12 @@ int create_socket(int port){
     server.sin_family = AF_INET;
     server.sin_port = htons(port);
     server.sin_addr.s_addr = htonl(INADDR_ANY);
+    struct timeval timeout;
+    timeout.tv_sec = 10000; // 10 second timeout for receives
 
     int opt_val = 1;
-    setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt_val, sizeof(opt_val));
+    setsockopt(server_fd, SOL_SOCKET,  SO_REUSEADDR, &opt_val, sizeof(opt_val));
+    setsockopt(server_fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(struct timeval));
 
     int err = bind(server_fd, (struct sockaddr *) &server, sizeof(server));
     if (err < 0){
