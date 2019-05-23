@@ -74,9 +74,10 @@ int main (int argc, char *argv[]) {
             sleep(1);
             continue;
         }
-
+        int children_pid[game.player_number];
         for (int i = 0; i < game.player_number; i++) {
             pid = fork();
+            cildren_pid[i] = pid;
             if (pid == 0) { // Client communication processes
                 int client_id = i;
                 int client_fd = game.players[i].client_fd;
@@ -103,12 +104,15 @@ int main (int argc, char *argv[]) {
                     }
                     if(game.rounds == MAX_ROUNDS){
                         send_message("VICT", client_id, game);
+                        exit(0);
                     }
                 }
+                exit(0); 
             }
         }
 
         while (run) { // Game master process
+        
             int num_closed = MAX_PLAYERS;
             int winner_id = -1;
             for (int i = 0; i < game.player_number; i++) {
