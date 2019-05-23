@@ -36,65 +36,52 @@ void send_dice(int client_fd, int* dice){
 }
 
 void send_message(char* message, int client_id, struct game_session game) {
-    char* response = calloc(BUFFER_SIZE, sizeof(char));
     int client_fd = game.players[client_id].client_fd;
 
+    char* response = calloc(BUFFER_SIZE, sizeof(char));
+    response[0] = '\0';
+
+
     if (strstr(message, "WELCOME")) {
-        response[0] = '\0';
         sprintf(response, "WELCOME,%d", client_id);
-        send(client_fd, response, strlen(response), 0);
         printf("Player %d has joined.\n", client_id);
     }
 
     else if(strstr(message, "START")) {
-        response[0] = '\0';
         sprintf(response, "START,%d,%d", game.player_number, PLAYER_LIVES);
-        send(client_fd, response, strlen(response), 0);
         printf("Starting game for player %d.\n", client_id);
     }
 
     else if (strstr(message, "CANCEL")) {
-        response[0] = '\0';
         sprintf(response, "CANCEL");
-        send(client_fd, response, strlen(response), 0);
         printf("Not enough players, canceling...\n");
     }
 
     else if (strstr(message, "PASS")) {
-        response[0] = '\0';
         sprintf(response, "%d,PASS", client_id);
-        send(client_fd, response, strlen(response), 0);
         printf("Player %d has passed.\n", client_id);
     }
 
     else if (strstr(message, "FAIL")) {
-        response[0] = '\0';
         sprintf(response, "%d,FAIL", client_id);
-        send(client_fd, response, strlen(response), 0);
         printf("Player %d has failed.\n", client_id);
     }
 
     else if (strstr(message, "ELIM")) {
-        response[0] = '\0';
         sprintf(response, "%d,ELIM", client_id);
-        send(client_fd, response, strlen(response), 0);
         printf("Player %d has been eliminated.\n", client_id);
     }
 
     else if (strstr(message, "VICT")) {
-        response[0] = '\0';
         sprintf(response, "%d,VICT", client_id);
-        send(client_fd, response, strlen(response), 0);
         printf("Player %d is victorious.\n", client_id);
     }
 
     else if (strstr(message, "KICK")) {
-        response[0] = '\0';
         sprintf(response, "%d,KICK", client_id);
-        send(client_fd, response, strlen(response), 0);
         printf("Player %d has been kicked for cheating.\n", client_id);
     }
-
+    send(client_fd, response, strlen(response), 0);
     free(response);
 }
 
