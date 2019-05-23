@@ -38,6 +38,7 @@ int main (int argc, char *argv[]) {
     while (run) {
         int pid;
         int fd[2];
+        int child_status;
         char* buf = calloc(BUFFER_SIZE, sizeof(char));
         int client_fd = accept(server_fd, (struct sockaddr *) &client, &client_len);
         printf("Connection being made\n");  
@@ -75,8 +76,11 @@ int main (int argc, char *argv[]) {
             continue;
         }
 
+
+        int children_pid[game.player_number];
         for (int i = 0; i < game.player_number; i++) {
             pid = fork();
+            children_pid[i] = pid;
             if (pid == 0) { // Client communication processes
                 int client_id = i;
                 int client_fd = game.players[i].client_fd;
@@ -99,30 +103,37 @@ int main (int argc, char *argv[]) {
 
                     if (game.players[client_id].player_lives == 0){
                         send_message("ELIM", client_id, game);
-                        exit(0);
+                        exit(3);
                     }
                     if(game.rounds == MAX_ROUNDS){
                         send_message("VICT", client_id, game);
+                        exit(3);
                     }
                 }
+                exit(3);
             }
         }
 
         while (run) { // Game master process
-            int num_closed = MAX_PLAYERS;
-            int winner_id = -1;
-            for (int i = 0; i < game.player_number; i++) {
-                struct stat client_stat_buf;
-                if (fstat(game.players[i].client_fd, &client_stat_buf) == -1) {
-                    num_closed -= 1;
-                    printf("Player %d has disconnected\n", i);
-                } else {
-                    winner_id = i;
+            int players_remaining = game.player_number;
+            int winner_id;
+            for (int j = 0; j < game.player_number; j++) {
+                if (children_pid[j] == -1) {
+                    players_remaining--;
+                    continue;
                 }
+                
+                printf("Wexit b4 wait = %d\n", WEXITSTATUS(child_status));
+                waitpid(children_pid[j], &child_status, WNOHANG);
+                if(WEXITSTATUS(child_status)) {
+                    printf("Player %d exited the game. From parent\n", j);
+                    children_pid[j] = -1; // Rip Child
+                }
+                winner_id = j;
             }
-            if (num_closed == MAX_PLAYERS - 1) {
-                sprintf(buf, "%d,VICT", winner_id);
-                write(game.players[winner_id].client_fd, buf, strlen(buf));
+
+            if (players_remaining == 1) {
+                send_message("VICT", game.players[winner_id].client_fd, game);
                 run = 0;
             }
         }

@@ -101,14 +101,30 @@ void send_message(char* message, int client_id, struct game_session game) {
 
 bool eval_move(char* message, int* dice, int client_id, struct game_session game) {
     bool pass = false;
+    int client_fd = game.players[client_id].client_fd;
     printf("Message received from %d as: %s\n", client_id, message);
+    if (strcmp(message, "") == 0) {
+        char* wakeup = calloc(14, sizeof(char));
+        wakeup[0] = '\0';
+        sprintf(wakeup, "AWAKE?");
+        int sent = send(client_fd, wakeup, strlen(wakeup), 0);
+        if (sent < 0) {
+            printf("Player %d has exited the game. From eval_move\n", client_fd);
+            exit(3);
+        }
+        else {
+            printf("Player %d sent an empty message or disconnected!\n", client_id);
+            return false;
+        }
+    }
+    
     // Get incoming player id
     int player_id;
     char * token = strtok(message, ",");
     if (token != NULL) {
         player_id = atoi(token);
     } else {
-        return false;
+       return false;
     }
     if(player_id == 0 && strstr(token, "0") == NULL){
         player_id = -1;
