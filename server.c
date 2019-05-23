@@ -18,6 +18,7 @@
 int create_socket(int port);
 
 int run = 1;
+int reject_pid;
 
 int main (int argc, char *argv[]) {
     if (argc < 2) {
@@ -61,8 +62,8 @@ int main (int argc, char *argv[]) {
         }
         
         if (game.player_number == MAX_PLAYERS) {
-            pid = fork();
-            if(pid == 0){
+            reject_pid = fork();
+            if(reject_pid == 0){
                 while(run){
                     int client_fd = accept(server_fd, (struct sockaddr *) &client, &client_len);
                     reject_player(client_fd);
@@ -133,6 +134,7 @@ int main (int argc, char *argv[]) {
             if (players_remaining == 1) {
                 send_message("VICT", winner_id, game);
                 printf("Exiting...\n");
+                kill(reject_pid, SIGKILL);
                 exit(3);
             }
         }

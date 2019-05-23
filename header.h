@@ -10,6 +10,7 @@
 #include <sys/time.h>
 #include <errno.h>
 #include <sys/wait.h>
+#include <signal.h>
 
 #define BUFFER_SIZE 12
 #define MAX_PLAYERS 4
