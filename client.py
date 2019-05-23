@@ -31,7 +31,6 @@ def main():
     client_id = 0
     players = 0
     lives = 0
-    last_msg = ""
     try:    
         exit = False        
         while True:
@@ -39,7 +38,7 @@ def main():
             mess = data.decode()
             if "WELCOME" in mess:
                 print(mess)
-                last_msg, client_id = mess.split(",")
+                client_id = mess.split(",")[1]
                 print("Joined as player ", client_id)
             elif "START" in mess:
                 print(mess) 
