@@ -59,7 +59,6 @@ void send_message(char* message, int client_id, struct game_session game) {
 
     else if (strstr(message, "PASS")) {
         sprintf(response, "%d,PASS", client_id);
-        printf("Player %d has passed.\n", client_id);
     }
 
     else if (strstr(message, "FAIL")) {
@@ -89,14 +88,13 @@ void send_message(char* message, int client_id, struct game_session game) {
 bool eval_move(char* message, int* dice, int client_id, struct game_session game) {
     bool pass = false;
     int client_fd = game.players[client_id].client_fd;
-    printf("Message received from %d as: %s\n", client_id, message);
     if (strcmp(message, "") == 0) {
         char* wakeup = calloc(14, sizeof(char));
         wakeup[0] = '\0';
         sprintf(wakeup, "AWAKE?");
         int sent = send(client_fd, wakeup, strlen(wakeup), 0);
         if (sent < 0) {
-            printf("Player %d has exited the game. From eval_move\n", client_fd);
+            printf("Player %d has exited the game.\n", client_fd);
             exit(3);
         }
         else {

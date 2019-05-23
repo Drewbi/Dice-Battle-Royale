@@ -81,17 +81,16 @@ int main (int argc, char *argv[]) {
         for (int i = 0; i < game.player_number; i++) {
             pid = fork();
             children_pid[i] = pid;
-            if (pid == 0) { // Client communication processes
+            if (pid == 0) { // Client child communication processes
                 int client_id = i;
                 int client_fd = game.players[i].client_fd;
                 send_message("START", client_id, game);
                 
                 while(run){
                     game.rounds++;
-                    sleep(3);
+                    sleep(3); // We were unable to implement move timers
                     char* message = get_message(client_id, game);
                     int* roll = roll_dice();
-                    // send_dice(client_fd, roll); Option to send dice to client
                     bool passed = eval_move(message, roll, client_id, game);
                     if (passed) {
                         send_message("PASS", client_id, game);
@@ -113,8 +112,8 @@ int main (int argc, char *argv[]) {
                 exit(3);
             }
         }
-
-        while (run) { // Game master process
+    
+        while (run) { // Parent process
             int players_remaining = game.player_number;
             int winner_id;
             for (int j = 0; j < game.player_number; j++) {
@@ -123,18 +122,18 @@ int main (int argc, char *argv[]) {
                     continue;
                 }
                 
-                printf("Wexit b4 wait = %d\n", WEXITSTATUS(child_status));
-                waitpid(children_pid[j], &child_status, WNOHANG);
-                if(WEXITSTATUS(child_status)) {
-                    printf("Player %d exited the game. From parent\n", j);
+                int isDead = waitpid(children_pid[j], &child_status, WNOHANG);
+                if(isDead != 0 && isDead != -1) {
+                    printf("Player %d exited the game.\n", j);
                     children_pid[j] = -1; // Rip Child
                 }
                 winner_id = j;
             }
 
             if (players_remaining == 1) {
-                send_message("VICT", game.players[winner_id].client_fd, game);
-                run = 0;
+                send_message("VICT", winner_id, game);
+                printf("Exiting...\n");
+                exit(3);
             }
         }
     }

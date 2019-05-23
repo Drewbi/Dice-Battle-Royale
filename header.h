@@ -11,11 +11,10 @@
 #include <errno.h>
 #include <sys/wait.h>
 
-#define MSGSIZE 14
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 12
 #define MAX_PLAYERS 4
-#define MAX_ROUNDS 10
-#define PLAYER_LIVES 1
+#define MAX_ROUNDS 15
+#define PLAYER_LIVES 5
 
 struct player {
     int client_fd;
